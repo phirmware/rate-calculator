@@ -8,6 +8,10 @@ import RatesPanel from "@/components/RatesPanel";
 import EarningsSummary from "@/components/EarningsSummary";
 
 const LS_KEY = "ratecal_data";
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 const DEFAULT_RATES: Rates = { normal: 12, extra: 18, bankHoliday: 24 };
 const DEFAULT_DEDUCTIONS: Deductions = { studentLoan: "none", pensionPercent: 0, taxCode: "1257L" };
 
@@ -72,10 +76,8 @@ export default function Home() {
   }
 
   function handleReset() {
-    localStorage.removeItem(LS_KEY);
-    setShifts([]);
-    setRates(DEFAULT_RATES);
-    setDeductions(DEFAULT_DEDUCTIONS);
+    const monthStr = `${year}-${String(month + 1).padStart(2, "0")}`;
+    setShifts((prev) => prev.filter((s) => !s.date.startsWith(monthStr)));
     setShowReset(false);
   }
 
@@ -192,10 +194,10 @@ export default function Home() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">
-              Reset all data?
+              Clear this month?
             </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
-              This will delete all your shifts, rates, and deduction settings. This cannot be undone.
+              This will delete all shifts for {MONTH_NAMES[month]} {year}. Your rates and settings will not be affected.
             </p>
             <div className="flex gap-3">
               <button
@@ -208,7 +210,7 @@ export default function Home() {
                 onClick={handleReset}
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors shadow-sm shadow-red-500/20"
               >
-                Reset
+                Clear
               </button>
             </div>
           </div>
