@@ -9,7 +9,7 @@ import EarningsSummary from "@/components/EarningsSummary";
 
 const LS_KEY = "ratecal_data";
 const DEFAULT_RATES: Rates = { normal: 12, extra: 18, bankHoliday: 24 };
-const DEFAULT_DEDUCTIONS: Deductions = { studentLoan: "none", pensionPercent: 0 };
+const DEFAULT_DEDUCTIONS: Deductions = { studentLoan: "none", pensionPercent: 0, taxCode: "1257L" };
 
 function save(data: ShiftData) {
   localStorage.setItem(LS_KEY, JSON.stringify(data));
@@ -22,6 +22,9 @@ function load(): ShiftData {
     const data = JSON.parse(raw);
     if (!data.deductions) {
       data.deductions = DEFAULT_DEDUCTIONS;
+    }
+    if (!data.deductions.taxCode) {
+      data.deductions.taxCode = "1257L";
     }
     return data;
   } catch {

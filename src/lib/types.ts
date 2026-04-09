@@ -17,6 +17,7 @@ export type StudentLoanPlan = "none" | "plan1" | "plan2" | "plan4" | "plan5" | "
 export interface Deductions {
   studentLoan: StudentLoanPlan;
   pensionPercent: number; // e.g. 5 for 5%
+  taxCode: string; // e.g. "1257L", "BR", "D0", "K475"
 }
 
 export interface ShiftData {

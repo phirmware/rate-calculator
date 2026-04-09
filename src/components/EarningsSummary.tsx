@@ -20,7 +20,7 @@ export default function EarningsSummary({ shifts, rates, deductions, year, month
 
   const totalGross = monthShifts.reduce((sum, s) => sum + calculateShiftPay(s, rates), 0);
   const totalHours = monthShifts.reduce((sum, s) => sum + calculateShiftHours(s), 0);
-  const tax: TaxBreakdown = calculateUKTax(totalGross, deductions.pensionPercent, deductions.studentLoan);
+  const tax: TaxBreakdown = calculateUKTax(totalGross, deductions.pensionPercent, deductions.studentLoan, deductions.taxCode || "1257L");
 
   const typeLabels: Record<string, string> = {
     normal: "Normal",

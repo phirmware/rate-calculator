@@ -2,12 +2,25 @@
 
 import { useState } from "react";
 import { Rates, Deductions, StudentLoanPlan } from "@/lib/types";
+import { parseTaxCode } from "@/lib/tax";
 
 interface RatesPanelProps {
   rates: Rates;
   deductions: Deductions;
   onSaveRates: (rates: Rates) => void;
   onSaveDeductions: (deductions: Deductions) => void;
+}
+
+function TaxCodeHint({ code }: { code: string }) {
+  const parsed = parseTaxCode(code);
+  let hint = "";
+  if (parsed.mode === "BR") hint = "All income taxed at 20%";
+  else if (parsed.mode === "D0") hint = "All income taxed at 40%";
+  else if (parsed.mode === "D1") hint = "All income taxed at 45%";
+  else if (parsed.mode === "NT") hint = "No tax deducted";
+  else if (parsed.mode === "K") hint = `Adds \u00A3${parsed.kAmount.toLocaleString()} to taxable income`;
+  else hint = `Tax-free allowance: \u00A3${parsed.personalAllowance.toLocaleString()}`;
+  return <p className="text-[10px] text-slate-400 mt-1 ml-0.5">{hint}</p>;
 }
 
 const STUDENT_LOAN_OPTIONS: { value: StudentLoanPlan; label: string }[] = [
@@ -27,6 +40,7 @@ export default function RatesPanel({
   const [bankHoliday, setBankHoliday] = useState(rates.bankHoliday.toString());
   const [pensionPercent, setPensionPercent] = useState(deductions.pensionPercent.toString());
   const [studentLoan, setStudentLoan] = useState<StudentLoanPlan>(deductions.studentLoan);
+  const [taxCode, setTaxCode] = useState(deductions.taxCode || "1257L");
   const [saved, setSaved] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -40,7 +54,7 @@ export default function RatesPanel({
     if (isNaN(p) || p < 0 || p > 100) return;
 
     onSaveRates({ normal: n, extra: e, bankHoliday: b });
-    onSaveDeductions({ pensionPercent: p, studentLoan });
+    onSaveDeductions({ pensionPercent: p, studentLoan, taxCode: taxCode.trim() || "1257L" });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -109,6 +123,21 @@ export default function RatesPanel({
             </p>
 
             <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                  Tax Code
+                </label>
+                <input
+                  type="text"
+                  value={taxCode}
+                  onChange={(e) => setTaxCode(e.target.value.toUpperCase())}
+                  placeholder="1257L"
+                  maxLength={10}
+                  className="w-full rounded-lg px-3 py-2 text-sm font-medium bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent focus:border-indigo-500 dark:focus:border-indigo-400 text-slate-800 dark:text-slate-200 outline-none transition-colors uppercase tracking-wider"
+                />
+                <TaxCodeHint code={taxCode} />
+              </div>
+
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
                   Pension Contribution
