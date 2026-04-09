@@ -67,7 +67,7 @@ export default function EarningsSummary({ shifts, rates, deductions, year, month
           </div>
           <div>
             <p className="text-[10px] text-slate-400 font-medium">Hours</p>
-            <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{totalHours.toFixed(1)}</p>
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{totalHours.toFixed(2)}</p>
           </div>
         </div>
         <div className="flex-1 bg-slate-50 dark:bg-slate-700/30 rounded-xl px-3 py-2.5 flex items-center gap-2.5">
@@ -152,7 +152,7 @@ export default function EarningsSummary({ shifts, rates, deductions, year, month
                         {typeLabels[s.type]}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-0.5 pl-3">{hours.toFixed(1)} hrs</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5 pl-3">{hours.toFixed(2)} hrs</p>
                   </div>
 
                   {/* Pay */}
@@ -172,7 +172,7 @@ export default function EarningsSummary({ shifts, rates, deductions, year, month
               </div>
               <div className="flex-1">
                 <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Total</span>
-                <p className="text-[11px] text-slate-400">{totalHours.toFixed(1)} hrs</p>
+                <p className="text-[11px] text-slate-400">{totalHours.toFixed(2)} hrs</p>
               </div>
               <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
                 &#163;{totalGross.toFixed(2)}
