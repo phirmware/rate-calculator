@@ -1,14 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Rates, Deductions, StudentLoanPlan } from "@/lib/types";
 import { parseTaxCode } from "@/lib/tax";
 
 interface RatesPanelProps {
-  rates: Rates;
-  deductions: Deductions;
-  onSaveRates: (rates: Rates) => void;
-  onSaveDeductions: (deductions: Deductions) => void;
+  globalRates: Rates;
+  globalDeductions: Deductions;
+  hasOverride: boolean;
+  overrideRates?: Rates;
+  overrideDeductions?: Deductions;
+  monthLabel: string;
+  onSaveGlobal: (rates: Rates, deductions: Deductions) => void;
+  onSaveOverride: (rates: Rates, deductions: Deductions) => void;
+  onRemoveOverride: () => void;
 }
 
 function TaxCodeHint({ code }: { code: string }) {
@@ -32,17 +37,44 @@ const STUDENT_LOAN_OPTIONS: { value: StudentLoanPlan; label: string }[] = [
   { value: "postgrad", label: "Postgraduate" },
 ];
 
+type Mode = "global" | "month";
+
 export default function RatesPanel({
-  rates, deductions, onSaveRates, onSaveDeductions,
+  globalRates, globalDeductions, hasOverride,
+  overrideRates, overrideDeductions, monthLabel,
+  onSaveGlobal, onSaveOverride, onRemoveOverride,
 }: RatesPanelProps) {
-  const [normal, setNormal] = useState(rates.normal.toString());
-  const [extra, setExtra] = useState(rates.extra.toString());
-  const [bankHoliday, setBankHoliday] = useState(rates.bankHoliday.toString());
-  const [pensionPercent, setPensionPercent] = useState(deductions.pensionPercent.toString());
-  const [studentLoan, setStudentLoan] = useState<StudentLoanPlan>(deductions.studentLoan);
-  const [taxCode, setTaxCode] = useState(deductions.taxCode || "1257L");
-  const [saved, setSaved] = useState(false);
+  const [mode, setMode] = useState<Mode>(hasOverride ? "month" : "global");
   const [open, setOpen] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // Active values based on mode
+  const activeRates = mode === "month" && overrideRates ? overrideRates : globalRates;
+  const activeDeductions = mode === "month" && overrideDeductions ? overrideDeductions : globalDeductions;
+
+  const [normal, setNormal] = useState(activeRates.normal.toString());
+  const [extra, setExtra] = useState(activeRates.extra.toString());
+  const [bankHoliday, setBankHoliday] = useState(activeRates.bankHoliday.toString());
+  const [pensionPercent, setPensionPercent] = useState(activeDeductions.pensionPercent.toString());
+  const [studentLoan, setStudentLoan] = useState<StudentLoanPlan>(activeDeductions.studentLoan);
+  const [taxCode, setTaxCode] = useState(activeDeductions.taxCode || "1257L");
+
+  // Sync form when mode, month, or override changes
+  useEffect(() => {
+    const r = mode === "month" && overrideRates ? overrideRates : globalRates;
+    const d = mode === "month" && overrideDeductions ? overrideDeductions : globalDeductions;
+    setNormal(r.normal.toString());
+    setExtra(r.extra.toString());
+    setBankHoliday(r.bankHoliday.toString());
+    setPensionPercent(d.pensionPercent.toString());
+    setStudentLoan(d.studentLoan);
+    setTaxCode(d.taxCode || "1257L");
+  }, [mode, globalRates, globalDeductions, overrideRates, overrideDeductions]);
+
+  // Sync mode when navigating to a month with/without override
+  useEffect(() => {
+    setMode(hasOverride ? "month" : "global");
+  }, [hasOverride, monthLabel]);
 
   function handleSave() {
     const n = parseFloat(normal);
@@ -53,10 +85,22 @@ export default function RatesPanel({
     if (isNaN(n) || isNaN(e) || isNaN(b) || n <= 0 || e <= 0 || b <= 0) return;
     if (isNaN(p) || p < 0 || p > 100) return;
 
-    onSaveRates({ normal: n, extra: e, bankHoliday: b });
-    onSaveDeductions({ pensionPercent: p, studentLoan, taxCode: taxCode.trim() || "1257L" });
+    const r: Rates = { normal: n, extra: e, bankHoliday: b };
+    const d: Deductions = { pensionPercent: p, studentLoan, taxCode: taxCode.trim() || "1257L" };
+
+    if (mode === "global") {
+      onSaveGlobal(r, d);
+    } else {
+      onSaveOverride(r, d);
+    }
+
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  }
+
+  function handleRemoveOverride() {
+    onRemoveOverride();
+    setMode("global");
   }
 
   return (
@@ -74,7 +118,13 @@ export default function RatesPanel({
           </div>
           <div>
             <h3 className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100">Settings</h3>
-            <p className="text-[11px] text-slate-400">Rates &amp; deductions</p>
+            <p className="text-[11px] text-slate-400">
+              {hasOverride ? (
+                <span className="text-amber-500 font-medium">Override active</span>
+              ) : (
+                "Rates & deductions"
+              )}
+            </p>
           </div>
         </div>
         <svg
@@ -88,6 +138,36 @@ export default function RatesPanel({
       {/* Collapsible content */}
       {open && (
         <div className="px-4 sm:px-5 pb-4 sm:pb-5 space-y-4">
+          {/* Mode toggle */}
+          <div className="flex rounded-xl bg-slate-100 dark:bg-slate-700/50 p-1">
+            <button
+              onClick={() => setMode("global")}
+              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                mode === "global"
+                  ? "bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm"
+                  : "text-slate-500 dark:text-slate-400"
+              }`}
+            >
+              All Months
+            </button>
+            <button
+              onClick={() => setMode("month")}
+              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                mode === "month"
+                  ? "bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm"
+                  : "text-slate-500 dark:text-slate-400"
+              }`}
+            >
+              {monthLabel.split(" ")[0]}
+            </button>
+          </div>
+
+          {mode === "month" && (
+            <p className="text-[10px] text-amber-500 dark:text-amber-400 font-medium">
+              These settings only apply to {monthLabel}
+            </p>
+          )}
+
           {/* Hourly Rates */}
           <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
             Hourly Rates
@@ -176,16 +256,35 @@ export default function RatesPanel({
             </div>
           </div>
 
-          <button
-            onClick={handleSave}
-            className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-[0.98] ${
-              saved
-                ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/20"
-                : "bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-sm shadow-indigo-500/20 hover:from-indigo-600 hover:to-indigo-700"
-            }`}
-          >
-            {saved ? "Saved!" : "Save Settings"}
-          </button>
+          {/* Action buttons */}
+          <div className="space-y-2">
+            <button
+              onClick={handleSave}
+              className={`w-full py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 active:scale-[0.98] ${
+                saved
+                  ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/20"
+                  : mode === "month"
+                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm shadow-amber-500/20 hover:from-amber-600 hover:to-amber-700"
+                  : "bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-sm shadow-indigo-500/20 hover:from-indigo-600 hover:to-indigo-700"
+              }`}
+            >
+              {saved
+                ? "Saved!"
+                : mode === "month"
+                ? `Save for ${monthLabel.split(" ")[0]}`
+                : "Save Settings"
+              }
+            </button>
+
+            {mode === "month" && hasOverride && (
+              <button
+                onClick={handleRemoveOverride}
+                className="w-full py-2 rounded-xl text-xs font-medium text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 dark:text-slate-400 dark:hover:text-red-400 transition-colors"
+              >
+                Remove override, use global settings
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

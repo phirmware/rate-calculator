@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Shift, Rates, Deductions, ShiftData } from "@/lib/types";
+import { useState, useEffect, useMemo } from "react";
+import { Shift, Rates, Deductions, ShiftData, MonthOverride } from "@/lib/types";
 import Calendar from "@/components/Calendar";
 import ShiftModal from "@/components/ShiftModal";
 import RatesPanel from "@/components/RatesPanel";
@@ -21,7 +21,7 @@ function save(data: ShiftData) {
 
 function load(): ShiftData {
   const raw = localStorage.getItem(LS_KEY);
-  if (!raw) return { shifts: [], rates: DEFAULT_RATES, deductions: DEFAULT_DEDUCTIONS };
+  if (!raw) return { shifts: [], rates: DEFAULT_RATES, deductions: DEFAULT_DEDUCTIONS, monthOverrides: {} };
   try {
     const data = JSON.parse(raw);
     if (!data.deductions) {
@@ -30,10 +30,17 @@ function load(): ShiftData {
     if (!data.deductions.taxCode) {
       data.deductions.taxCode = "1257L";
     }
+    if (!data.monthOverrides) {
+      data.monthOverrides = {};
+    }
     return data;
   } catch {
-    return { shifts: [], rates: DEFAULT_RATES, deductions: DEFAULT_DEDUCTIONS };
+    return { shifts: [], rates: DEFAULT_RATES, deductions: DEFAULT_DEDUCTIONS, monthOverrides: {} };
   }
+}
+
+function monthKey(year: number, month: number): string {
+  return `${year}-${String(month + 1).padStart(2, "0")}`;
 }
 
 export default function Home() {
@@ -43,23 +50,39 @@ export default function Home() {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [rates, setRates] = useState<Rates>(DEFAULT_RATES);
   const [deductions, setDeductions] = useState<Deductions>(DEFAULT_DEDUCTIONS);
+  const [monthOverrides, setMonthOverrides] = useState<Record<string, MonthOverride>>({});
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [showReset, setShowReset] = useState(false);
+
+  const currentMonthKey = monthKey(year, month);
+  const currentOverride = monthOverrides[currentMonthKey];
+  const hasOverride = !!currentOverride;
+
+  // Effective rates/deductions for the current month
+  const effectiveRates = useMemo(
+    () => currentOverride?.rates || rates,
+    [currentOverride, rates]
+  );
+  const effectiveDeductions = useMemo(
+    () => currentOverride?.deductions || deductions,
+    [currentOverride, deductions]
+  );
 
   useEffect(() => {
     const data = load();
     setShifts(data.shifts);
     setRates(data.rates);
     setDeductions(data.deductions);
+    setMonthOverrides(data.monthOverrides || {});
     setReady(true);
   }, []);
 
   useEffect(() => {
     if (ready) {
-      save({ shifts, rates, deductions });
+      save({ shifts, rates, deductions, monthOverrides });
     }
-  }, [shifts, rates, deductions, ready]);
+  }, [shifts, rates, deductions, monthOverrides, ready]);
 
   function handleSaveShift(shift: Shift) {
     setShifts((prev) => {
@@ -76,9 +99,32 @@ export default function Home() {
   }
 
   function handleReset() {
-    const monthStr = `${year}-${String(month + 1).padStart(2, "0")}`;
-    setShifts((prev) => prev.filter((s) => !s.date.startsWith(monthStr)));
+    const mk = currentMonthKey;
+    setShifts((prev) => prev.filter((s) => !s.date.startsWith(mk)));
     setShowReset(false);
+  }
+
+  function handleSaveGlobalRates(r: Rates) {
+    setRates(r);
+  }
+
+  function handleSaveGlobalDeductions(d: Deductions) {
+    setDeductions(d);
+  }
+
+  function handleSaveOverride(overrideRates: Rates, overrideDeductions: Deductions) {
+    setMonthOverrides((prev) => ({
+      ...prev,
+      [currentMonthKey]: { rates: overrideRates, deductions: overrideDeductions },
+    }));
+  }
+
+  function handleRemoveOverride() {
+    setMonthOverrides((prev) => {
+      const next = { ...prev };
+      delete next[currentMonthKey];
+      return next;
+    });
   }
 
   function prevMonth() {
@@ -156,15 +202,23 @@ export default function Home() {
           {/* Sidebar */}
           <div className="space-y-4 sm:space-y-6">
             <RatesPanel
-              rates={rates}
-              deductions={deductions}
-              onSaveRates={setRates}
-              onSaveDeductions={setDeductions}
+              globalRates={rates}
+              globalDeductions={deductions}
+              hasOverride={hasOverride}
+              overrideRates={currentOverride?.rates}
+              overrideDeductions={currentOverride?.deductions}
+              monthLabel={`${MONTH_NAMES[month]} ${year}`}
+              onSaveGlobal={(r, d) => {
+                handleSaveGlobalRates(r);
+                handleSaveGlobalDeductions(d);
+              }}
+              onSaveOverride={handleSaveOverride}
+              onRemoveOverride={handleRemoveOverride}
             />
             <EarningsSummary
               shifts={shifts}
-              rates={rates}
-              deductions={deductions}
+              rates={effectiveRates}
+              deductions={effectiveDeductions}
               year={year}
               month={month}
             />

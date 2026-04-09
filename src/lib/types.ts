@@ -20,10 +20,16 @@ export interface Deductions {
   taxCode: string; // e.g. "1257L", "BR", "D0", "K475"
 }
 
+export interface MonthOverride {
+  rates?: Rates;
+  deductions?: Deductions;
+}
+
 export interface ShiftData {
   shifts: Shift[];
   rates: Rates;
   deductions: Deductions;
+  monthOverrides?: Record<string, MonthOverride>; // keyed by "YYYY-MM"
 }
 
 export interface TaxBreakdown {
