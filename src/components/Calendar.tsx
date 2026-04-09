@@ -4,7 +4,7 @@ import { Shift } from "@/lib/types";
 
 interface CalendarProps {
   year: number;
-  month: number; // 0-indexed
+  month: number;
   shifts: Shift[];
   onDayClick: (date: string) => void;
   onPrevMonth: () => void;
@@ -26,7 +26,6 @@ export default function Calendar({
   const lastDay = new Date(year, month + 1, 0);
   const daysInMonth = lastDay.getDate();
 
-  // Monday = 0, Sunday = 6
   let startDow = firstDay.getDay() - 1;
   if (startDow < 0) startDow = 6;
 
@@ -43,9 +42,15 @@ export default function Calendar({
   }
 
   const typeColors: Record<string, string> = {
-    normal: "bg-blue-500",
+    normal: "bg-indigo-500",
     extra: "bg-amber-500",
-    bankHoliday: "bg-red-500",
+    bankHoliday: "bg-rose-500",
+  };
+
+  const typeDotColors: Record<string, string> = {
+    normal: "bg-indigo-400",
+    extra: "bg-amber-400",
+    bankHoliday: "bg-rose-400",
   };
 
   const today = new Date();
@@ -53,73 +58,101 @@ export default function Calendar({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3 sm:mb-4">
+      {/* Month navigation */}
+      <div className="flex items-center justify-between mb-4 sm:mb-5">
         <button
           onClick={onPrevMonth}
-          className="px-2.5 py-1 sm:px-3 rounded bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all duration-200 active:scale-95"
         >
-          &larr;
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
         </button>
-        <h2 className="text-base sm:text-xl font-semibold text-gray-800 dark:text-gray-100">
+        <h2 className="text-base sm:text-lg font-semibold text-slate-800 dark:text-slate-100">
           {MONTH_NAMES[month]} {year}
         </h2>
         <button
           onClick={onNextMonth}
-          className="px-2.5 py-1 sm:px-3 rounded bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all duration-200 active:scale-95"
         >
-          &rarr;
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
+      {/* Day headers */}
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1">
         {DAY_NAMES_FULL.map((d, i) => (
-          <div key={d} className="text-center text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 py-1">
+          <div key={`${d}-${i}`} className="text-center text-[10px] sm:text-xs font-semibold text-slate-400 dark:text-slate-500 py-1.5 uppercase tracking-wider">
             <span className="hidden sm:inline">{d}</span>
             <span className="sm:hidden">{DAY_NAMES_SHORT[i]}</span>
           </div>
         ))}
+      </div>
 
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {cells.map((day, i) => {
           if (day === null) {
-            return <div key={`empty-${i}`} className="h-12 sm:h-20" />;
+            return <div key={`empty-${i}`} className="h-12 sm:h-[4.5rem]" />;
           }
 
           const dateStr = `${monthStr}-${String(day).padStart(2, "0")}`;
           const dayShifts = getShiftsForDay(day);
           const isToday = dateStr === todayStr;
+          const hasShifts = dayShifts.length > 0;
 
           return (
             <button
               key={dateStr}
               onClick={() => onDayClick(dateStr)}
-              className={`h-12 sm:h-20 p-0.5 sm:p-1 rounded sm:rounded-lg border text-left transition-colors hover:bg-blue-50 dark:hover:bg-gray-700 ${
+              className={`h-12 sm:h-[4.5rem] p-0.5 sm:p-1.5 rounded-lg sm:rounded-xl text-left transition-all duration-200 active:scale-[0.97] relative ${
                 isToday
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                  : "border-gray-200 dark:border-gray-700"
+                  ? "bg-indigo-500 shadow-md shadow-indigo-500/20"
+                  : hasShifts
+                  ? "bg-slate-50 dark:bg-slate-700/40 hover:bg-slate-100 dark:hover:bg-slate-700/60"
+                  : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
               }`}
             >
               <span
-                className={`text-[11px] sm:text-sm font-medium ${
-                  isToday ? "text-blue-600 dark:text-blue-400" : "text-gray-700 dark:text-gray-300"
+                className={`text-[11px] sm:text-sm font-semibold ${
+                  isToday
+                    ? "text-white"
+                    : "text-slate-700 dark:text-slate-300"
                 }`}
               >
                 {day}
               </span>
-              {/* On mobile: just show dots for shifts. On desktop: show time ranges */}
-              <div className="mt-0.5 sm:mt-1 space-y-0.5">
-                {dayShifts.map((s) => (
-                  <div key={s.id}>
-                    <div
-                      className={`${typeColors[s.type]} hidden sm:block text-white text-[10px] px-1 rounded truncate`}
-                    >
-                      {s.startTime}-{s.endTime}
-                    </div>
-                    <div
-                      className={`${typeColors[s.type]} sm:hidden w-1.5 h-1.5 rounded-full inline-block mr-0.5`}
-                    />
+
+              {/* Desktop: show time ranges */}
+              <div className="hidden sm:block mt-0.5 space-y-0.5">
+                {dayShifts.slice(0, 2).map((s) => (
+                  <div
+                    key={s.id}
+                    className={`${isToday ? "bg-white/25" : typeColors[s.type]} text-white text-[9px] leading-tight px-1 py-px rounded truncate`}
+                  >
+                    {s.startTime}
                   </div>
                 ))}
+                {dayShifts.length > 2 && (
+                  <div className={`text-[9px] ${isToday ? "text-white/70" : "text-slate-400"}`}>
+                    +{dayShifts.length - 2}
+                  </div>
+                )}
               </div>
+
+              {/* Mobile: show dots */}
+              {dayShifts.length > 0 && (
+                <div className="sm:hidden absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+                  {dayShifts.slice(0, 3).map((s) => (
+                    <div
+                      key={s.id}
+                      className={`w-1 h-1 rounded-full ${isToday ? "bg-white/70" : typeDotColors[s.type]}`}
+                    />
+                  ))}
+                </div>
+              )}
             </button>
           );
         })}

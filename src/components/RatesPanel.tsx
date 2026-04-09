@@ -28,6 +28,7 @@ export default function RatesPanel({
   const [pensionPercent, setPensionPercent] = useState(deductions.pensionPercent.toString());
   const [studentLoan, setStudentLoan] = useState<StudentLoanPlan>(deductions.studentLoan);
   const [saved, setSaved] = useState(false);
+  const [open, setOpen] = useState(false);
 
   function handleSave() {
     const n = parseFloat(normal);
@@ -45,91 +46,119 @@ export default function RatesPanel({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-5">
-      <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3 sm:mb-4">Settings</h3>
-      <div className="space-y-3">
-        {/* Hourly Rates */}
-        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
-          Hourly Rates
-        </p>
-        {[
-          { label: "Normal", value: normal, setter: setNormal, dot: "bg-blue-500" },
-          { label: "Extra", value: extra, setter: setExtra, dot: "bg-amber-500" },
-          { label: "Bank Holiday", value: bankHoliday, setter: setBankHoliday, dot: "bg-red-500" },
-        ].map(({ label, value, setter, dot }) => (
-          <div key={label}>
-            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-              <span className={`inline-block w-2 h-2 rounded-full ${dot} mr-2`} />
-              {label} (per hour)
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">&#163;</span>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={value}
-                onChange={(e) => setter(e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg pl-7 pr-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-              />
-            </div>
+    <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-sm shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-200/50 dark:border-slate-700/50 overflow-hidden">
+      {/* Collapsible header */}
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between p-4 sm:p-5 text-left"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center">
+            <svg className="w-4 h-4 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
           </div>
-        ))}
-
-        {/* Deductions */}
-        <div className="pt-2">
-          <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">
-            Deductions
-          </p>
-
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-              Pension Contribution
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                max="100"
-                value={pensionPercent}
-                onChange={(e) => setPensionPercent(e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg pl-3 pr-7 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
-            </div>
-            <p className="text-xs text-gray-400 mt-1">Deducted before income tax</p>
-          </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-              Student Loan
-            </label>
-            <select
-              value={studentLoan}
-              onChange={(e) => setStudentLoan(e.target.value as StudentLoanPlan)}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-            >
-              {STUDENT_LOAN_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <h3 className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100">Settings</h3>
+            <p className="text-[11px] text-slate-400">Rates &amp; deductions</p>
           </div>
         </div>
-
-        <button
-          onClick={handleSave}
-          className={`w-full py-2 rounded-lg font-medium transition-colors ${
-            saved
-              ? "bg-green-500 text-white"
-              : "bg-blue-600 hover:bg-blue-700 text-white"
-          }`}
+        <svg
+          className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
         >
-          {saved ? "Saved!" : "Update Settings"}
-        </button>
-      </div>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Collapsible content */}
+      {open && (
+        <div className="px-4 sm:px-5 pb-4 sm:pb-5 space-y-4">
+          {/* Hourly Rates */}
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+            Hourly Rates
+          </p>
+          <div className="space-y-2.5">
+            {[
+              { label: "Normal", value: normal, setter: setNormal, color: "bg-indigo-500" },
+              { label: "Extra", value: extra, setter: setExtra, color: "bg-amber-500" },
+              { label: "Bank Holiday", value: bankHoliday, setter: setBankHoliday, color: "bg-rose-500" },
+            ].map(({ label, value, setter, color }) => (
+              <div key={label} className="flex items-center gap-3">
+                <span className={`w-2 h-2 rounded-full ${color} shrink-0`} />
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 w-20 shrink-0">{label}</span>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">&#163;</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={value}
+                    onChange={(e) => setter(e.target.value)}
+                    className="w-full rounded-lg pl-7 pr-3 py-2 text-sm font-medium bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent focus:border-indigo-500 dark:focus:border-indigo-400 text-slate-800 dark:text-slate-200 outline-none transition-colors"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Deductions */}
+          <div className="pt-2">
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">
+              Deductions
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                  Pension Contribution
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    max="100"
+                    value={pensionPercent}
+                    onChange={(e) => setPensionPercent(e.target.value)}
+                    className="w-full rounded-lg pl-3 pr-8 py-2 text-sm font-medium bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent focus:border-indigo-500 dark:focus:border-indigo-400 text-slate-800 dark:text-slate-200 outline-none transition-colors"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">%</span>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1 ml-0.5">Pre-tax deduction</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                  Student Loan
+                </label>
+                <select
+                  value={studentLoan}
+                  onChange={(e) => setStudentLoan(e.target.value as StudentLoanPlan)}
+                  className="w-full rounded-lg px-3 py-2 text-sm font-medium bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent focus:border-indigo-500 dark:focus:border-indigo-400 text-slate-800 dark:text-slate-200 outline-none transition-colors appearance-none"
+                >
+                  {STUDENT_LOAN_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleSave}
+            className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-[0.98] ${
+              saved
+                ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/20"
+                : "bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-sm shadow-indigo-500/20 hover:from-indigo-600 hover:to-indigo-700"
+            }`}
+          >
+            {saved ? "Saved!" : "Save Settings"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
