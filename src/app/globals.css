@@ -57,7 +57,7 @@ body {
   }
 }
 
-/* Modal animation */
+/* Modal animations */
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
@@ -78,4 +78,15 @@ body {
 }
 .animate-scale-in {
   animation: scaleIn 0.2s ease-out;
+}
+
+/* Tab content animation — only fires on mobile */
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+@media (max-width: 1023px) {
+  .animate-tab-in {
+    animation: tabFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
 }
