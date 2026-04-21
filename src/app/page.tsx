@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Shift, Rates, Deductions, ShiftData, MonthOverride, ShiftPreset } from "@/lib/types";
 import Calendar from "@/components/Calendar";
 import ShiftModal, { DEFAULT_PRESETS } from "@/components/ShiftModal";
@@ -42,6 +42,43 @@ function load(): ShiftData {
   }
 }
 
+type TrackEvent = { action: "add" | "edit" | "delete"; shift: Shift; ts: string };
+
+const pendingEvents: TrackEvent[] = [];
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+const DEBOUNCE_MS = 10_000; // send 10 s after last action
+
+function getBrowserInfo() {
+  return {
+    userAgent: navigator.userAgent,
+    language: navigator.language,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    screen: `${screen.width}×${screen.height}`,
+    platform: navigator.platform,
+  };
+}
+
+function flushEvents() {
+  if (pendingEvents.length === 0) return;
+  const events = pendingEvents.splice(0); // drain
+  if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null; }
+  const body = JSON.stringify({ events, browser: getBrowserInfo() });
+  // sendBeacon is reliable during page close; fall back to fetch otherwise
+  if (typeof navigator.sendBeacon === "function") {
+    navigator.sendBeacon("/api/track", new Blob([body], { type: "application/json" }));
+  } else {
+    fetch("/api/track", { method: "POST", headers: { "Content-Type": "application/json" }, body })
+      .catch(() => {});
+  }
+}
+
+function trackShift(action: "add" | "edit" | "delete", shift: Shift) {
+  pendingEvents.push({ action, shift, ts: new Date().toISOString() });
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(flushEvents, DEBOUNCE_MS);
+}
+
+
 function monthKey(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, "0")}`;
 }
@@ -81,6 +118,9 @@ export default function Home() {
     setMonthOverrides(data.monthOverrides || {});
     setPresets(data.presets || DEFAULT_PRESETS);
     setReady(true);
+
+    window.addEventListener("beforeunload", flushEvents);
+    return () => window.removeEventListener("beforeunload", flushEvents);
   }, []);
 
   useEffect(() => {
@@ -93,14 +133,20 @@ export default function Home() {
     setShifts((prev) => {
       const index = prev.findIndex((s) => s.id === shift.id);
       if (index >= 0) {
+        trackShift("edit", shift);
         return prev.map((s) => (s.id === shift.id ? shift : s));
       }
+      trackShift("add", shift);
       return [...prev, shift];
     });
   }
 
   function handleDeleteShift(id: string) {
-    setShifts((prev) => prev.filter((s) => s.id !== id));
+    setShifts((prev) => {
+      const shift = prev.find((s) => s.id === id);
+      if (shift) trackShift("delete", shift);
+      return prev.filter((s) => s.id !== id);
+    });
   }
 
   function handleReset() {
