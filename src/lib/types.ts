@@ -25,11 +25,22 @@ export interface MonthOverride {
   deductions?: Deductions;
 }
 
+export type PresetIcon = "sun" | "moon" | "sunrise" | "clock" | "star" | "zap";
+
+export interface ShiftPreset {
+  id: string;
+  label: string;
+  start: string; // HH:mm
+  end: string;   // HH:mm
+  icon: PresetIcon;
+}
+
 export interface ShiftData {
   shifts: Shift[];
   rates: Rates;
   deductions: Deductions;
   monthOverrides?: Record<string, MonthOverride>; // keyed by "YYYY-MM"
+  presets?: ShiftPreset[];
 }
 
 export interface TaxBreakdown {

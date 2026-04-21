@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Shift, Rates, Deductions, ShiftData, MonthOverride } from "@/lib/types";
+import { Shift, Rates, Deductions, ShiftData, MonthOverride, ShiftPreset } from "@/lib/types";
 import Calendar from "@/components/Calendar";
-import ShiftModal from "@/components/ShiftModal";
+import ShiftModal, { DEFAULT_PRESETS } from "@/components/ShiftModal";
 import RatesPanel from "@/components/RatesPanel";
 import EarningsSummary from "@/components/EarningsSummary";
 
@@ -21,7 +21,7 @@ function save(data: ShiftData) {
 
 function load(): ShiftData {
   const raw = localStorage.getItem(LS_KEY);
-  if (!raw) return { shifts: [], rates: DEFAULT_RATES, deductions: DEFAULT_DEDUCTIONS, monthOverrides: {} };
+  if (!raw) return { shifts: [], rates: DEFAULT_RATES, deductions: DEFAULT_DEDUCTIONS, monthOverrides: {}, presets: DEFAULT_PRESETS };
   try {
     const data = JSON.parse(raw);
     if (!data.deductions) {
@@ -33,9 +33,12 @@ function load(): ShiftData {
     if (!data.monthOverrides) {
       data.monthOverrides = {};
     }
+    if (!data.presets || data.presets.length === 0) {
+      data.presets = DEFAULT_PRESETS;
+    }
     return data;
   } catch {
-    return { shifts: [], rates: DEFAULT_RATES, deductions: DEFAULT_DEDUCTIONS, monthOverrides: {} };
+    return { shifts: [], rates: DEFAULT_RATES, deductions: DEFAULT_DEDUCTIONS, monthOverrides: {}, presets: DEFAULT_PRESETS };
   }
 }
 
@@ -51,6 +54,7 @@ export default function Home() {
   const [rates, setRates] = useState<Rates>(DEFAULT_RATES);
   const [deductions, setDeductions] = useState<Deductions>(DEFAULT_DEDUCTIONS);
   const [monthOverrides, setMonthOverrides] = useState<Record<string, MonthOverride>>({});
+  const [presets, setPresets] = useState<ShiftPreset[]>(DEFAULT_PRESETS);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [showReset, setShowReset] = useState(false);
@@ -75,14 +79,15 @@ export default function Home() {
     setRates(data.rates);
     setDeductions(data.deductions);
     setMonthOverrides(data.monthOverrides || {});
+    setPresets(data.presets || DEFAULT_PRESETS);
     setReady(true);
   }, []);
 
   useEffect(() => {
     if (ready) {
-      save({ shifts, rates, deductions, monthOverrides });
+      save({ shifts, rates, deductions, monthOverrides, presets });
     }
-  }, [shifts, rates, deductions, monthOverrides, ready]);
+  }); // no deps — intentionally saves after every render when ready
 
   function handleSaveShift(shift: Shift) {
     setShifts((prev) => {
@@ -231,8 +236,10 @@ export default function Home() {
         <ShiftModal
           date={selectedDate}
           existingShifts={shifts.filter((s) => s.date === selectedDate)}
+          presets={presets}
           onSave={handleSaveShift}
           onDelete={handleDeleteShift}
+          onSavePresets={setPresets}
           onClose={() => setSelectedDate(null)}
         />
       )}
