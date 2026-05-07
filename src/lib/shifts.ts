@@ -4,7 +4,7 @@ export function calculateShiftHours(shift: Shift): number {
   const [startH, startM] = shift.startTime.split(":").map(Number);
   const [endH, endM] = shift.endTime.split(":").map(Number);
 
-  let startMinutes = startH * 60 + startM;
+  const startMinutes = startH * 60 + startM;
   let endMinutes = endH * 60 + endM;
 
   // Handle overnight shifts
@@ -17,8 +17,12 @@ export function calculateShiftHours(shift: Shift): number {
 
 export function calculateShiftPay(shift: Shift, rates: Rates): number {
   const hours = calculateShiftHours(shift);
-  const rate = rates[shift.type];
-  return Math.round(hours * rate * 100) / 100;
+  const ratePerHour =
+    shift.type === "normal"      ? rates.normal      :
+    shift.type === "holiday"     ? rates.normal      : // holiday uses basic rate
+    shift.type === "extra"       ? rates.extra       :
+                                   rates.bankHoliday;
+  return Math.round(hours * ratePerHour * 100) / 100;
 }
 
 export function calculateMonthlyEarnings(

@@ -190,15 +190,16 @@ export default function ShiftModal({
   }
 
   const typeLabels: Record<Shift["type"], string> = {
-    normal: "Normal", extra: "Extra", bankHoliday: "Bank Hol",
+    normal: "Basic", holiday: "Holiday", extra: "OT", bankHoliday: "Bank Hol",
   };
   const typeActiveStyles: Record<Shift["type"], string> = {
-    normal: "bg-indigo-500 text-white shadow-sm shadow-indigo-500/30",
-    extra: "bg-amber-500 text-white shadow-sm shadow-amber-500/30",
+    normal:      "bg-indigo-500 text-white shadow-sm shadow-indigo-500/30",
+    holiday:     "bg-emerald-500 text-white shadow-sm shadow-emerald-500/30",
+    extra:       "bg-amber-500 text-white shadow-sm shadow-amber-500/30",
     bankHoliday: "bg-rose-500 text-white shadow-sm shadow-rose-500/30",
   };
   const typeFullLabels: Record<Shift["type"], string> = {
-    normal: "Normal", extra: "Extra", bankHoliday: "Bank Holiday",
+    normal: "Basic", holiday: "Holiday Pay", extra: "Overtime", bankHoliday: "Bank Holiday",
   };
 
   const headerTitle =
@@ -399,8 +400,8 @@ export default function ShiftModal({
               {/* Shift type */}
               <div>
                 <p className={`${sectionLabelCls} mb-2.5`}>Shift Type</p>
-                <div className="flex gap-2">
-                  {(["normal", "extra", "bankHoliday"] as const).map((t) => (
+                <div className="grid grid-cols-2 gap-2">
+                  {(["normal", "holiday", "extra", "bankHoliday"] as const).map((t) => (
                     <button
                       key={t}
                       onClick={() => setShiftType(t)}

@@ -21,18 +21,21 @@ const DAY_NAMES_SHORT = ["M",   "T",   "W",   "T",   "F",   "S",   "S" ];
 
 const typeColors: Record<string, string> = {
   normal:      "bg-indigo-500",
+  holiday:     "bg-emerald-500",
   extra:       "bg-amber-500",
   bankHoliday: "bg-rose-500",
 };
 
 const typeTints: Record<string, string> = {
   normal:      "bg-indigo-50  dark:bg-indigo-950/40",
+  holiday:     "bg-emerald-50 dark:bg-emerald-950/40",
   extra:       "bg-amber-50   dark:bg-amber-950/40",
   bankHoliday: "bg-rose-50    dark:bg-rose-950/40",
 };
 
 const typeDotColors: Record<string, string> = {
   normal:      "bg-indigo-500",
+  holiday:     "bg-emerald-500",
   extra:       "bg-amber-500",
   bankHoliday: "bg-rose-500",
 };

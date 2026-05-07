@@ -3,7 +3,7 @@ export interface Shift {
   date: string; // YYYY-MM-DD
   startTime: string; // HH:mm
   endTime: string; // HH:mm
-  type: "normal" | "extra" | "bankHoliday";
+  type: "normal" | "holiday" | "extra" | "bankHoliday";
 }
 
 export interface Rates {
